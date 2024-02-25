@@ -1,0 +1,36 @@
+
+compile:
+
+    make
+
+run it:
+
+    ./bin/repl filesystem 1024 512
+
+hexdump:
+
+    PARTFILE=test_part make hexdump
+
+inside repl:
+
+Commands are defined in command.c
+
+       mkfs                                                 -- Make File System
+       dump                                                 -- Dump File System
+       cat                                                  -- Concatenate        //PENDING
+       ls </path>                                           -- List file or directory
+       mkdir </path/directory-name>                         -- Make Directory
+       sync                                                 -- Synchronize and Save File System
+       fallocate <size in bytes> </path/file or directory>  -- File allocate  or create a file with size
+       rmdir </path/file or directory>                      -- Remove directory
+       exit                                                 -- Exit Filesystem
+       rm </path/file or directory>                         -- Remove file
+       cp                                                   -- Copy File         //PENDING
+       mv                                                   -- Move File         //PENDING
+
+
+
+       
+
+
+

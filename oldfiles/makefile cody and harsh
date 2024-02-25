@@ -1,0 +1,48 @@
+CC = gcc
+OBJECTS = .buildfiles/command.o .buildfiles/filesystemdriver.o .buildfiles/fsdriver3.o .buildfiles/fsLow.o .buildfiles/hash.o .buildfiles/tools.o .buildfiles/fs.o
+HEADERS = command.h filesystemdriver.h fsLow.h hash.h systemstructs.h tools.h fs.h
+
+.buildfiles/assignment3 : ${OBJECTS} ${HEADERS}
+	$(CC) -g -o .buildfiles/assignment3 $(OBJECTS) -lm -lreadline
+
+.buildfiles/command.o : command.c command.h hash.h tools.h fsLow.h filesystemdriver.h
+	$(CC) -g -c -o .buildfiles/command.o command.c
+
+.buildfiles/filesystemdriver.o : filesystemdriver.c filesystemdriver.h fsLow.h systemstructs.h
+	$(CC) -g -c -o .buildfiles/filesystemdriver.o filesystemdriver.c
+
+.buildfiles/fs.o : fs.c fs.h hash.h fsLow.h tools.h
+	$(CC) -g -c -o .buildfiles/fs.o fs.c
+
+.buildfiles/fsdriver3.o : fsdriver3.c fsLow.h hash.h command.h tools.h
+	$(CC) -g -c -o .buildfiles/fsdriver3.o fsdriver3.c -lreadline
+
+.buildfiles/fsLow.o : fsLow.c fsLow.h
+	$(CC) -g -c -o .buildfiles/fsLow.o fsLow.c -lm
+
+.buildfiles/hash.o : hash.c hash.h command.h
+	$(CC) -g -c -o .buildfiles/hash.o hash.c
+
+.buildfiles/tools.o : tools.c tools.h
+	$(CC) -g -c -o .buildfiles/tools.o tools.c
+
+.buildfiles/fsLowDriver : .buildfiles/fsLowDriver.o .buildfiles/fsLow.o fsLow.h
+	$(CC) -g -o .buildfiles/fsLowDriver .buildfiles/fsLowDriver.o .buildfiles/fsLow.o -lm
+
+.buildfiles/fsLowDriver.o : fsLowDriver.c fsLow.h
+	$(CC) -g -c -o .buildfiles/fsLowDriver.o fsLowDriver.c
+
+.buildfiles/hexdump : .buildfiles/hexdump.o
+	$(CC) -g -o .buildfiles/hexdump .buildfiles/hexdump.o
+
+.buildfiles/hexdump.o : hexdump.c
+	$(CC) -g -c -o .buildfiles/hexdump.o hexdump.c
+
+clean :
+	rm .buildfiles/*
+
+runassignment3 :
+	./.buildfiles/assignment3 .buildfiles/myVolume 512000 512
+
+runhexdump :
+	./.buildfiles/hexdump .buildfiles/myVolume

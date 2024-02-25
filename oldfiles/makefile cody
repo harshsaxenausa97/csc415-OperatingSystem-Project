@@ -1,0 +1,94 @@
+# The compiler you want to use goes after CC =
+# The flags you want to use go after CFLAGS =
+# All makefiles by default use CC for compiler names and CFLAGS for flags
+# These variables are used in the default "implicit rules"
+CC = gcc
+CFLAGS = -g -Wall
+
+# I wanted to separate all the object files, executables, and other files
+# from the source code since I didn't want to constantly push these ever
+# changing files to github. So all those files go in a separate folder which
+# is specified here. And that folder is added to the .gitignore.
+BUILDDIRECTORY = .buildfiles
+
+# This variable holds ONLY the object files that are going to be used in
+# the main executable. So to add files to the main executable simply type the
+# name of the c file at the end of the line. Do not write .c or .o
+# as the code will take care of the extensions for you.
+# A reminder on how this works. "$(addprefix <some prefix>, name1 name2 name3)"
+# simply adds the prefix to all of the named files to create <some prefix>name1
+# "$(addsuffix ..." is exactly the same syntax as "$(addprefix ..." and as
+# expected adds the suffix to all of the named files to create
+# name1<some suffix>
+OBJECTS = $(addprefix $(BUILDDIRECTORY)/, $(addsuffix .o, commands filesystem fsLow hashmap fsdriver3 terminal))
+
+# This is an "implicit rule." Implicit rules are usually in the form
+# "%.o : %.c" If the makefile sees a .c file then it will build the similarly
+# named .o file. There are lots of predefined implicit rules but I needed to 
+# make this one in order to support the BUILDDIRECTORY scheme. The
+# $(BUILDDIRECTORY)/%.o says that all the .o files should be searched for and 
+# built in the BUILDDIRECTORY. The | $(BUILDDIRECTORY) is a special rule that 
+# says the .o file depends on the BUILDDIRECTORY existing instead of its
+# timestamp. Normally the makefile checks if the specified file is newer than
+# the .o file and then rebuilds the .o file as needed. But this way the .o 
+# file is only dependant on the BUILDDIRECTORY existing and will not rebuild
+# the .o file if the directory has a newer timestamp.
+$(BUILDDIRECTORY)/%.o : %.c | $(BUILDDIRECTORY)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# This is the main executable. It is placed in BUILDDIRECTORY. Since it is
+# the first actual "recipe" it is called the "default recipe" and is what will
+# run when you type "make" into your terminal. All other recipes have to be
+# specified as "make <some recipe>"
+$(BUILDDIRECTORY)/fsdriver3 : $(OBJECTS) 
+	$(CC) $(CFLAGS) -o $(BUILDDIRECTORY)/fsdriver3 $(OBJECTS) -lm -lreadline
+
+$(BUILDDIRECTORY)/fsLowDriver : $(BUILDDIRECTORY) $(BUILDDIRECTORY)/fsLowDriver.o $(BUILDDIRECTORY)/fsLow.o
+	$(CC) $(CFLAGS) -o $(BUILDDIRECTORY)/fsLowDriver $(BUILDDIRECTORY)/fsLowDriver.o $(BUILDDIRECTORY)/fsLow.o -lm
+
+$(BUILDDIRECTORY)/hexdump : $(BUILDDIRECTORY) $(BUILDDIRECTORY)/hexdump.o
+	$(CC) $(CFLAGS) -o $(BUILDDIRECTORY)/hexdump $(BUILDDIRECTORY)/hexdump.o
+
+# This makes the BUILDDIRECTORY. This is here for when a .o file needs to be
+# built but the BUILDDIRECTORY doesn't exist. The .o file sees that it is
+# "dependant" on this directory and comes here to make it.
+$(BUILDDIRECTORY) :
+	mkdir $(BUILDDIRECTORY)
+
+# This block of code is for making .o files. Each line is kinda "incomplete"
+# since each line should have a "recipe" after it. But none of them do. This is
+# because they are running on the "implicit rule" that I defined earlier.
+# The makefile sees the line I wrote here and plugs it into the implicit rule
+# above. The lines here doesn't necessarily need to be written. If the .o
+# was only dependant on the similarly named .c then the makefile can handle
+# everything for us. But these lines are here because I need to specify that
+# the .o file is dependant on some .h file. If, for example, you add #include
+# "fsLow.h" to the commands.c source file, then you need to add fsLow.h to the
+# commands.o recipe below.
+$(BUILDDIRECTORY)/commands.o : commands.h hashmap.h
+$(BUILDDIRECTORY)/filesystem.o : filesystem.h fsLow.h systemstructs.h
+$(BUILDDIRECTORY)/fsLow.o : fsLow.h
+$(BUILDDIRECTORY)/fsLowDriver.o : fsLow.h
+$(BUILDDIRECTORY)/hashmap.o : hashmap.h
+$(BUILDDIRECTORY)/fsdriver3.o : filesystem.h terminal.h
+$(BUILDDIRECTORY)/terminal.o : terminal.h commands.h filesystem.h
+
+# This is the clean command. It just deletes the BUILDDIRECTORY.
+# Run it by typing "make clean" into your terminal.
+clean :
+	rm -r $(BUILDDIRECTORY)
+
+# These are the run commands. They run the executable for you with some
+# arguments already specified. You don't have to use them but it's helpful to
+# not have to write out the line every time. To use them type
+# "make <name>" in your terminal. For example "make runfsdriver3"
+runfsdriver3 :
+	./$(BUILDDIRECTORY)/fsdriver3 myVolume 512000 512
+
+runfsLowDriver :
+	./$(BUILDDIRECTORY)/fsLowDriver 512000 512
+
+runhexdump :
+	rm -f $(BUILDDIRECTORY)/hexdump.txt
+	./$(BUILDDIRECTORY)/hexdump ./$(BUILDDIRECTORY)/myVolume >> ./$(BUILDDIRECTORY)/hexdump.txt
+	

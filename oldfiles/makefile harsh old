@@ -1,0 +1,48 @@
+
+OUT_DIR=./bin/
+INPUT_FILES=$(wildcard *.c)
+OBJ=$(patsubst %.c, %.o,${INPUT_FILES})
+MODULES=hash fsLow command tools fs
+LD_LIBS=$(patsubst %, ${OUT_DIR}/%.o,${MODULES})
+
+CC=gcc
+INCLUDE_DIR =./
+DEBUG_FLAGS= -g3 -gdwarf-2 -ggdb -O0
+CFLAGS_EXTRA=-Wextra $(DEBUG_FLAGS)
+LDFLAGS=${LD_LIBS}  -lreadline -lm
+CFLAGS=-I$(INCLUDE_DIR) -Wall -Wpedantic -std=c99 
+
+ifeq "$(wildcard $(OUT_DIR) )" ""
+  $(shell mkdir $(OUT_DIR))
+endif
+
+
+all:$(OBJ)
+ifdef DBG
+	${CC} ${CFLAGS} $(CFLAGS_EXTRA) fsdriver3.c ${LDFLAGS} -o ${OUT_DIR}/repl
+else
+	${CC} ${CFLAGS} fsdriver3.c ${LDFLAGS} -o ${OUT_DIR}/repl
+endif
+
+tags:
+	rm -f TAGS
+	etags *.[ch]
+
+%.o: %.c
+	@echo ---------- compile $<
+ifdef DBG
+	${CC} ${CFLAGS}  $(CFLAGS_EXTRA) -c -o ${OUT_DIR}/$@ $<
+else
+	${CC} ${CFLAGS} -c -o ${OUT_DIR}/$@ $<
+endif
+
+archive:
+	rm -f fs.tar fs.tar.bz2
+	tar c *.[ch] makefile README >fs.tar
+	bzip2 --best fs.tar
+
+clean:
+	rm -fr ${OUT_DIR} TAGS *.bz2 *.tar *~
+
+hexdump:
+	od ${PARTFILE} -tx2 -Ax
